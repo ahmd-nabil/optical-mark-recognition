@@ -5,7 +5,7 @@ import numpy as np
 
 # detect all rectangles then but them in an array depending on the area..
 # then choosing the biggest one to be our question box.
-def find_biggest_area(contours):
+def find_sorted_rectangles(contours):
     rectangles = []
     for c in contours:
         area = cv2.contourArea(c)
