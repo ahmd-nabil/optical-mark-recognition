@@ -24,7 +24,8 @@ main_paper_rgb = cv2.cvtColor(main_paper, cv2.COLOR_BGR2RGB)
 """ the previous line actually convert the BGR image to RGB image first because that is
  what is used in matplotlib and if we don't do it, it will mix things up eventually"""
 
-main_paper_gray = cv2.cvtColor(main_paper_rgb, cv2.COLOR_RGB2GRAY) # Here we convert our RGB to gray image.
+
+main_paper_gray = cv2.cvtColor(main_paper_rgb, cv2.COLOR_RGB2GRAY)# Here we convert our RGB to gray image.
 """ So, if we plot the imges now we will see it's converted to grayscale image.
     to do that us the code below again:"""
 
@@ -43,6 +44,7 @@ cv2.drawContours(main_paper_copy, main_paper_contours, -1, (0, 0, 255), 1)
 rectangles = utils.find_sorted_rectangles(contours=main_paper_contours)
 
 question_box = utils.detect_corners(rectangles[0])
+# Mark corners of the question box in the main_paper
 cv2.drawContours(main_paper, question_box, -1, (0, 0, 255), 10)
 
 # ----------------------------- RESHAPING THE CORNERS -----------------------------
@@ -94,7 +96,7 @@ for c in questions_image_contours:
     # have an aspect ratio approximately equal to 1
     if w >= 12 and h >= 12 and 0.8 <= ar <= 1.5:
         circles_contours.append(c)
-cv2.drawContours(questions_image, circles_contours[0], -1, (0, 0, 255), 1)
+cv2.drawContours(questions_image_copy, circles_contours[50], -1, (0, 0, 255), 1)
 print(len(circles_contours))
 
 """ 
@@ -115,16 +117,20 @@ for (j, c) in enumerate(circles_contours):
     mask = np.zeros(bubbled_thresh.shape, dtype="uint8")
     cv2.drawContours(mask, [c], -1, 255, -1)
 
-    # apply the mask to the thresholded image, then
+    # apply the mask to the threshold image, then
     # count the number of non-zero pixels in the
     # bubble area
     mask = cv2.bitwise_and(bubbled_thresh, bubbled_thresh, mask=mask)
     total = cv2.countNonZero(mask)
-    # print("index: ", j, "total:", total)
+    is_bubbled = False
+    if(total > 100):
+        is_bubbled = True
+    bubbled.append(is_bubbled)
+    print("index: ", j, "total:", total, "is bubbled: ", is_bubbled)
 
 # ------------------------------------------ plotting ----------------------------
 plt.figure("question table")
-plt.imshow(questions_image, cmap="gray")  # plotting the image.
+plt.imshow(questions_image_copy, cmap="gray")  # plotting the image.
 plt.show()
 k = cv2.waitKey(0)  # preventing the images to automatically just disappear.
 if k == ord("s"):  # save the image if we pressed the letter s in out keyboard.
