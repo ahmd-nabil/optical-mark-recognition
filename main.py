@@ -1,20 +1,22 @@
 # Imports
 import sys
+
 import cv2
 import imutils
 import matplotlib.pyplot as plt
 import numpy as np
+
 import utils
+
 # Reading images
-main_paper = cv2.imread("OMR.jpg")
+main_paper = cv2.imread("OMR4Main.png")
 width, height, channels = main_paper.shape  # extract image shape
 
-###
-main_paper_copy = main_paper.copy()
 
 if main_paper is None:  # checking if the images is valid to be read or Not.
     sys.exit("couldn't read this images")
 
+main_paper_copy = main_paper.copy()
 
 # --------------------------Pre-processing----------------------
 # Converting the images to gray scale
@@ -22,7 +24,7 @@ main_paper_rgb = cv2.cvtColor(main_paper, cv2.COLOR_BGR2RGB)
 """ the previous line actually convert the BGR image to RGB image first because that is
  what is used in matplotlib and if we don't do it, it will mix things up eventually"""
 
-main_paper_gray = cv2.cvtColor(main_paper, cv2.COLOR_RGB2GRAY) # Here we convert our RGB to gray image.
+main_paper_gray = cv2.cvtColor(main_paper_rgb, cv2.COLOR_RGB2GRAY) # Here we convert our RGB to gray image.
 """ So, if we plot the imges now we will see it's converted to grayscale image.
     to do that us the code below again:"""
 
@@ -35,15 +37,13 @@ main_paper_canny = cv2.Canny(main_paper_blur, 100, 200)
 
 # Contours
 main_paper_contours, hierarchy = cv2.findContours(main_paper_canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-cv2.drawContours(main_paper, main_paper_contours, -1, (0, 0, 255), 1)
+cv2.drawContours(main_paper_copy, main_paper_contours, -1, (0, 0, 255), 1)
 
 # sorted rectangles (biggest area first)
 rectangles = utils.find_sorted_rectangles(contours=main_paper_contours)
 
 question_box = utils.detect_corners(rectangles[0])
 cv2.drawContours(main_paper, question_box, -1, (0, 0, 255), 10)
-# print(question_box.shape)
-# print(question_box)
 
 # ----------------------------- RESHAPING THE CORNERS -----------------------------
 question_box = utils.rearrange(points=question_box)
@@ -61,19 +61,22 @@ dim = (width, height)
 questions_image = cv2.resize(questions_image, dim, interpolation=cv2.INTER_AREA)
 h, w, c = questions_image.shape
 
+
+questions_image_copy = questions_image.copy()
 # ---------------------------------- REUSE ----------------------------------------
-questions_image_gray = cv2.cvtColor(questions_image, cv2.COLOR_RGB2GRAY)
+questions_image_gray = cv2.cvtColor(questions_image_copy, cv2.COLOR_RGB2GRAY)
 questions_image_blur = cv2.GaussianBlur(questions_image_gray, (5, 5), -1)
 questions_image_canny = cv2.Canny(questions_image_blur, 150, 225)
+
 # getting questions_image_threshold using RETR_EXTERNAL to prevent having inner/outer circles
-ret, question_image_thresh = cv2.threshold(questions_image_canny, 128, 255, cv2.RETR_EXTERNAL)
-cv2.imshow("question_image_thresh", question_image_thresh)
-# print(ret)
+ret, questions_image_thresh = cv2.threshold(questions_image_canny, 128, 255, cv2.RETR_EXTERNAL)
+# cv2.imshow("question_image_thresh", questions_image_thresh)
+
 """This is the value that our algorithm choose
 as a threshold to push value to black when exceeding it"""
 
 # the list of contours that correspond to questions
-questions_image_contours = cv2.findContours(question_image_thresh, cv2.RETR_EXTERNAL,
+questions_image_contours = cv2.findContours(questions_image_thresh, cv2.RETR_EXTERNAL,
                        cv2.CHAIN_APPROX_SIMPLE)
 questions_image_contours = imutils.grab_contours(questions_image_contours)
 
@@ -91,7 +94,7 @@ for c in questions_image_contours:
     # have an aspect ratio approximately equal to 1
     if w >= 12 and h >= 12 and 0.8 <= ar <= 1.5:
         circles_contours.append(c)
-cv2.drawContours(questions_image, circles_contours, -1, (0, 0, 255), 1)
+cv2.drawContours(questions_image, circles_contours[0], -1, (0, 0, 255), 1)
 print(len(circles_contours))
 
 """ 
@@ -117,7 +120,7 @@ for (j, c) in enumerate(circles_contours):
     # bubble area
     mask = cv2.bitwise_and(bubbled_thresh, bubbled_thresh, mask=mask)
     total = cv2.countNonZero(mask)
-    print("index: ", j, "total:", total)
+    # print("index: ", j, "total:", total)
 
 # ------------------------------------------ plotting ----------------------------
 plt.figure("question table")
