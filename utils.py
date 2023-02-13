@@ -1,5 +1,5 @@
 # import the necessary packages
-import cv2
+import cv2, os
 import numpy as np
 
 
@@ -9,12 +9,11 @@ def find_sorted_rectangles(contours):
     rectangles = []
     for c in contours:
         area = cv2.contourArea(c)
-        if area > 400:
-            peri = cv2.arcLength(c, True)
-            approx = cv2.approxPolyDP(c, 0.04 * peri, True)
-            # print(len(approx)) # we actually care if we have 4 edges here ( it's a rectangle !! )
-            if len(approx) == 4:
-                rectangles.append(c)
+        peri = cv2.arcLength(c, True)
+        approx = cv2.approxPolyDP(c, 0.04 * peri, True)
+        # print(len(approx)) # we actually care if we have 4 edges here ( it's a rectangle !! )
+        if len(approx) == 4 and area > 1000:
+            rectangles.append(c)
 
     # print(len(rectangles))
     rectangles = sorted(rectangles, key=cv2.contourArea, reverse=True)
@@ -70,3 +69,50 @@ def sort_contours(contours, method="left-to-right"):
                                              key=lambda b: b[1][i], reverse=reverse))
     # return the list of sorted contours and bounding boxes
     return contours, bounding_boxes
+
+
+def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
+    # initialize the dimensions of the image to be resized and
+    # grab the image size
+    dim = None
+    (h, w) = image.shape[:2]
+
+    # if both the width and height are None, then return the
+    # original image
+    if width is None and height is None:
+        return image
+
+    # check to see if the width is None
+    if width is None:
+        # calculate the ratio of the height and construct the
+        # dimensions
+        r = height / float(h)
+        dim = (int(w * r), height)
+
+    # otherwise, the height is None
+    else:
+        # calculate the ratio of the width and construct the
+        # dimensions
+        r = width / float(w)
+        dim = (width, int(h * r))
+
+    # resize the image
+    resized = cv2.resize(image, dim, interpolation=inter)
+
+    # return the resized image
+    return resized
+
+def rename_image_with_grades(q, grade):
+    open_brackets = "("
+    close_brackets = ")"
+    str_grade = str(grade)
+    rename = str(open_brackets + str_grade + close_brackets)
+    prev_name = str(q.path)
+    image_name = q.name.split(".")
+    first_part = str(image_name[0] + rename)
+    print(first_part)
+    ext = '.jpg'
+    str_ext = str(ext)
+    new_name1 = str(first_part + str_ext)
+    if rename not in q.name:
+        os.rename(prev_name, new_name1)
